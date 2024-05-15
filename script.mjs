@@ -31,7 +31,7 @@ const courseInfo = {
       }
     ]
   };
-  
+
   // The provided learner submission data.
   const learnerSubmissions = [
     {
@@ -103,10 +103,31 @@ Assumptions
 
 
   */
-  
-  function getLearnerData(courseInfo, assignmentGroup, [learnerSubmissions]) {
 
-
-  
-    return result;
+  function studentID() {
+/* 
+Find the two students with ID numbers 125 and 132.
+From LearnerSubmissions
+*/
   }
+
+  function assignmentNumnAndScore() {
+
+  }
+
+  function averageScore() {
+
+  }
+  
+  function getLearnerData(studentID, assignmentNumnAndScore, averageScore) {
+
+    studentID();
+    assignmentNumnAndScore();
+    averageScore();
+
+    return studentID, assignmentNumnAndScore, averageScore;
+  }
+
+const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+console.log(result);
+
