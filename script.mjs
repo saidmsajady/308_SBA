@@ -100,15 +100,16 @@ Assumptions
   - if an assignment was turned in 10 minutes late, deduct 10% additional to their score
   - Additional Errors - What if points_possible is 0? You cannot divide by zero. 
   - Additional Errors - What if a value that you are expecting to be a number is instead a string? 
-
-
-  */
+*/
 
   function studentID() {
-/* 
-Find the two students with ID numbers 125 and 132.
-From LearnerSubmissions
-*/
+    const studentIDs = [];
+    submission.forEach(function(submission) {
+      if (!studentIDs.includes(submission.learner_id)) {
+        studentIDs.push(submission.learner_id);
+      }
+    })
+    return studentIDs;
   }
 
   function assignmentNumnAndScore() {
