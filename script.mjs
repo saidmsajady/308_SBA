@@ -122,12 +122,63 @@ Assumptions
     return studentIDs;
   }
 
-  function assignmentNumnAndScore() {
-}
+  function assignmentNumnAndScore(submissions, assignments) {
+    for ( let i = 0; i < submissions.length; i++ ) {
+      const submission = submissions[i];
+      const assignment = assignments.find(function(a) {
+        return a.id === submission.assignment_id;
+      });
 
-  function averageScore() {
+      if ( assignment && new Date(submission.submission.submitted_at) <= new Date(assignment.due_at)) {
+        let score = submission.submission.score;
+        const dueDate = new Date(assignment.due_at);
+        const submittedDate = new Date(submission.submission.submitted_at);
+        const timeDiff = submittedDate - dueDate;
 
+        if (timeDiff > 0 && timeDiff <= 600000) {
+          score *= 0.9;
+        }
+
+        const scorePercentage = score / assignment.points_possible;
+
+        if (!studentData[submission.learner_id]) {
+          studentData[submission.learner_id] = {};
+        }
+
+        studentData[submission.learner_id][submission.assignment_id] = scorePercentage;
+      }
+    }
+    return studentData;
+  } 
+
+  function averageScore(studentData, assignmentGroup) {
+    const averages = [];
+
+    for (const studentID in studentData) {
+      if (studentData.hasOwnProperty(studentID)) {
+        let totalPoints = 0;
+        let weightedSum = 0;
+        const assignmentScores = studentData[studentID];
+
+        for (const assignmentID in assignmentScores) {
+          if (assignmentScores.hasOwnProperty(assignmentID)) {
+            const assignment = assignmentGroup.assignments.find(function(a) {
+            return a.id === parseInt(assignmentID);
+            });
+
+            const weight = assignment.points_possible * assignmentGroup.group_weight / 100;
+            totalPoints += weight;
+            weightedSum += assignmentScores[assignmentID] * weight;
+          }
+        }
+
+        const avg = weightedSum / totalPoints;
+          averages.push({ id: parseInt(studentID), avg, ...assignmentScores });
+      }
+    }
+    return averages;
   }
+
   
   function getLearnerData(studentID, assignmentNumnAndScore, averageScore) {
 
