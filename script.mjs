@@ -102,19 +102,28 @@ Assumptions
   - Additional Errors - What if a value that you are expecting to be a number is instead a string? 
 */
 
-  function studentID() {
+  function studentID(submissions) {
     const studentIDs = [];
-    submission.forEach(function(submission) {
-      if (!studentIDs.includes(submission.learner_id)) {
+
+    for ( let i = 0; i < submissions.length; i++ ) {
+      const submission = submissions[i];
+      let found = false;
+
+      for ( let j = 0; j < studentIDs.length; j++ ) {
+        if (studentIDs[j] === submission.learner_id) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
         studentIDs.push(submission.learner_id);
       }
-    })
+    }
     return studentIDs;
   }
 
   function assignmentNumnAndScore() {
-
-  }
+}
 
   function averageScore() {
 
@@ -129,6 +138,6 @@ Assumptions
     return studentID, assignmentNumnAndScore, averageScore;
   }
 
-const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
-console.log(result);
+//const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+//console.log(result);
 
