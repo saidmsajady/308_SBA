@@ -103,28 +103,8 @@ Assumptions
 */
 
 
-function studentID(submissions) {
-  const studentIDs = [];
-
-  for (let i = 0; i < submissions.length; i++) {
-      const submission = submissions[i];
-      let found = false;
-
-      for (let j = 0; j < studentIDs.length; j++) {
-          if (studentIDs[j] === submission.learner_id) {
-              found = true;
-              break;
-          }
-      }
-      if (!found) {
-          studentIDs.push(submission.learner_id);
-      }
-  }
-  return studentIDs;
-}
-
-function assignmentNumnAndScore(submissions, assignments) {
-  const studentData = {}; // Initialize studentData object
+function assignmentNumAndScore(submissions, assignments) {
+  const studentData = {};
 
   for (let i = 0; i < submissions.length; i++) {
       const submission = submissions[i];
@@ -132,13 +112,13 @@ function assignmentNumnAndScore(submissions, assignments) {
           return a.id === submission.assignment_id;
       });
 
-      if (assignment && new Date(submission.submission.submitted_at) <= new Date(assignment.due_at)) {
+      if (assignment) {
           let score = submission.submission.score;
           const dueDate = new Date(assignment.due_at);
           const submittedDate = new Date(submission.submission.submitted_at);
-          const timeDiff = submittedDate - dueDate;
 
-          if (timeDiff > 0 && timeDiff <= 600000) {
+          // Apply 10% penalty for late submission
+          if (submittedDate > dueDate) {
               score *= 0.9;
           }
 
@@ -158,35 +138,35 @@ function averageScore(studentData, assignmentGroup) {
   const averages = [];
 
   for (const studentID in studentData) {
-    if (studentData.hasOwnProperty(studentID)) {
-      let totalPoints = 0;
-      let weightedSum = 0;
-      const assignmentScores = studentData[studentID];
-      const studentResult = { id: parseInt(studentID) };
+      if (studentData.hasOwnProperty(studentID)) {
+          let totalPoints = 0;
+          let weightedSum = 0;
+          const assignmentScores = studentData[studentID];
+          const studentResult = { id: parseInt(studentID) };
 
-      for (const assignmentID in assignmentScores) {
-        if (assignmentScores.hasOwnProperty(assignmentID)) {
-          const assignment = assignmentGroup.assignments.find(function(a) {
-            return a.id === parseInt(assignmentID);
-          });
+          for (const assignmentID in assignmentScores) {
+              if (assignmentScores.hasOwnProperty(assignmentID)) {
+                  const assignment = assignmentGroup.assignments.find(function(a) {
+                      return a.id === parseInt(assignmentID);
+                  });
 
-          const dueDate = new Date(assignment.due_at);
-          const cutOffDate = new Date('2024-05-15');
-          if (assignment && dueDate <= cutOffDate && assignmentScores[assignmentID] !== undefined) {
-            const weight = assignment.points_possible * assignmentGroup.group_weight / 100;
-            totalPoints += weight;
-            weightedSum += assignmentScores[assignmentID] * weight;
-            studentResult[assignmentID] = assignmentScores[assignmentID];
+                  const dueDate = new Date(assignment.due_at);
+                  const cutOffDate = new Date('2024-05-15');
+                  if (assignment && dueDate <= cutOffDate && assignmentScores[assignmentID] !== undefined) {
+                      const weight = assignment.points_possible * assignmentGroup.group_weight / 100;
+                      totalPoints += weight;
+                      weightedSum += assignmentScores[assignmentID] * weight;
+                      studentResult[assignmentID] = assignmentScores[assignmentID];
+                  }
+              }
           }
-        }
-      }
 
-      if (totalPoints > 0) {
-        const avg = weightedSum / totalPoints;
-        studentResult.avg = avg;
-        averages.push(studentResult);
+          if (totalPoints > 0) {
+              const avg = weightedSum / totalPoints;
+              studentResult.avg = avg;
+              averages.push(studentResult);
+          }
       }
-    }
   }
   return averages;
 }
@@ -198,8 +178,7 @@ function getLearnerData(courseInfo, assignmentGroup, learnerSubmissions) {
           throw new Error("Invalid input: Assignment group does not belong to the provided course.");
       }
 
-      const students = studentID(learnerSubmissions);
-      const assignmentScores = assignmentNumnAndScore(learnerSubmissions, assignmentGroup.assignments);
+      const assignmentScores = assignmentNumAndScore(learnerSubmissions, assignmentGroup.assignments);
       const avgScores = averageScore(assignmentScores, assignmentGroup);
       result = avgScores;
   } catch (error) {
