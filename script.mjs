@@ -102,91 +102,99 @@ Assumptions
   - Additional Errors - What if a value that you are expecting to be a number is instead a string? 
 */
 
-
-function assignmentNumAndScore(submissions, assignments) {
+// This function is gonna calculate the assignment scores
+function calculateAssignmentScores(submissions, assignments) {
   const studentData = {};
 
-  for (let i = 0; i < submissions.length; i++) {
-      const submission = submissions[i];
-      const assignment = assignments.find(function(a) {
-          return a.id === submission.assignment_id;
-      });
+  for (const submission of submissions) {
+    const assignment = assignments.find(a => a.id === submission.assignment_id);
 
-      if (assignment) {
-          let score = submission.submission.score;
-          const dueDate = new Date(assignment.due_at);
-          const submittedDate = new Date(submission.submission.submitted_at);
+    if (assignment) {
+      const dueDate = new Date(assignment.due_at);
+      const today = new Date(new Date().setDate(new Date().getDate() - 1));
 
-          // Apply 10% penalty for late submission
-          if (submittedDate > dueDate) {
-              score *= 0.9;
-          }
+      // Only consider assignments with due dates before today
+      if (dueDate <= today) {
+        const score = submission.submission.score;
+        const submittedDate = new Date(submission.submission.submitted_at);
 
-          const scorePercentage = score / assignment.points_possible;
+        // Check for late submissions and apply a 10% penalty if necessary
+        const lateSubmissionPenalty = submittedDate > dueDate ? 0.9 : 1;
 
-          if (!studentData[submission.learner_id]) {
-              studentData[submission.learner_id] = {};
-          }
+        // Calculate the score percentage
+        const scorePercentage = score * lateSubmissionPenalty / assignment.points_possible;
 
-          studentData[submission.learner_id][submission.assignment_id] = scorePercentage;
+        // Store the score percentage for the student and assignment
+        if (!studentData[submission.learner_id]) {
+          studentData[submission.learner_id] = { id: submission.learner_id };
+        }
+        studentData[submission.learner_id][submission.assignment_id] = scorePercentage;
       }
+    }
   }
+  
   return studentData;
 }
 
-function averageScore(studentData, assignmentGroup) {
+// This function calculates the average scores for each student
+function calculateAverageScores(studentData, assignmentGroup) {
   const averages = [];
 
+  // This loops through each student 
   for (const studentID in studentData) {
-      if (studentData.hasOwnProperty(studentID)) {
-          let totalPoints = 0;
-          let weightedSum = 0;
-          const assignmentScores = studentData[studentID];
-          const studentResult = { id: parseInt(studentID) };
+    if (studentData.hasOwnProperty(studentID)) {
+      const assignmentScores = studentData[studentID];
+      let totalPoints = 0;
+      let weightedSum = 0;
 
-          for (const assignmentID in assignmentScores) {
-              if (assignmentScores.hasOwnProperty(assignmentID)) {
-                  const assignment = assignmentGroup.assignments.find(function(a) {
-                      return a.id === parseInt(assignmentID);
-                  });
+      // now looping assignments for current student
+      for (const assignmentID in assignmentScores) {
+        if (assignmentScores.hasOwnProperty(assignmentID)) {
+          const assignment = assignmentGroup.assignments.find(a => a.id === parseInt(assignmentID));
 
-                  const dueDate = new Date(assignment.due_at);
-                  const cutOffDate = new Date('2024-05-15');
-                  if (assignment && dueDate <= cutOffDate && assignmentScores[assignmentID] !== undefined) {
-                      const weight = assignment.points_possible * assignmentGroup.group_weight / 100;
-                      totalPoints += weight;
-                      weightedSum += assignmentScores[assignmentID] * weight;
-                      studentResult[assignmentID] = assignmentScores[assignmentID];
-                  }
-              }
+          // once found, calculates the weight and add it to the total
+          if (assignment) {
+            const weight = assignment.points_possible * assignmentGroup.group_weight / 100;
+            totalPoints += weight;
+            weightedSum += assignmentScores[assignmentID] * weight;
+          } else {
+            continue;
           }
-
-          if (totalPoints > 0) {
-              const avg = weightedSum / totalPoints;
-              studentResult.avg = avg;
-              averages.push(studentResult);
-          }
+        }
       }
+
+      // Calculate average score
+      if (totalPoints > 0) {
+        const avg = weightedSum / totalPoints;
+        averages.push({ ...studentData[studentID], avg });
+      }
+    }
   }
+  
   return averages;
 }
 
+// Gets the learner data
 function getLearnerData(courseInfo, assignmentGroup, learnerSubmissions) {
   let result;
+  
   try {
-      if (courseInfo.id !== assignmentGroup.course_id) {
-          throw new Error("Invalid input: Assignment group does not belong to the provided course.");
-      }
+    // Validate the assignment group belongs to the provided course
+    if (courseInfo.id !== assignmentGroup.course_id) {
+      throw new Error("Invalid input: Assignment group does not belong to the provided course.");
+    }
 
-      const assignmentScores = assignmentNumAndScore(learnerSubmissions, assignmentGroup.assignments);
-      const avgScores = averageScore(assignmentScores, assignmentGroup);
-      result = avgScores;
+    // Calculate assignment scores and average scores
+    const assignmentScores = calculateAssignmentScores(learnerSubmissions, assignmentGroup.assignments);
+    const avgScores = calculateAverageScores(assignmentScores, assignmentGroup);
+    result = avgScores;
   } catch (error) {
-      result = error.message;
+    result = error.message;
   }
 
   return result;
 }
 
+// Print the result
 const result = getLearnerData(courseInfo, assignmentGroup, learnerSubmissions);
 console.log(result);
